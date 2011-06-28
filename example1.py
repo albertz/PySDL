@@ -45,7 +45,7 @@ def main_loop():
 def app_main():
 	print "loaded SDL"
 	
-	SDL.SDL_Init(0xFFFF) # init everything
+	SDL.SDL_Init(SDL.SDL_INIT_EVERYTHING)
 	SDL.SDL_SetVideoMode(640,480,0,0)
 	SDL.SDL_EnableUNICODE(1)
 	print "initialized SDL"
