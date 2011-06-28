@@ -1,85 +1,30 @@
 import sys, os
+import cparser
 from ctypes import *
 sdl = None
 
-def init_SDL_dll(dll, headerdir, explicit=True):
-	global sdl
-	sdl = cdll.LoadLibrary(dll)
-	
-	if not explicit:
-		from pyclibrary import CParser, CLibrary
-		from glob import glob
-		headers = CParser(glob(headerdir + "/*.h"))
-		
-		lib = CLibrary(sdl, headers)
-		sdl = lib # this provides the same interface, so we can do this
-		
-		for t in headers.defs["types"]:
-			globals()[t] = sdl("types", t)
-	
-	else:
+# keep a reference to this module so that it's not garbage collected
+orig_module = sys.modules[__name__]
 
-		global SDLEventTypes
-		global c_SDLSurface_p, c_SDLKey, c_SDLMod
-		global c_SDLEvent
+from types import ModuleType
+class ModuleWrapper(ModuleType):
+	def __getattr__(self, attrib):
+		global sdl
+		try: return getattr(orig_module, attrib)
+		except AttributeError: pass
+		if sdl is not None:
+			return getattr(sdl, attrib)
+		raise AttributeError, "attrib " + attrib + " not found in module " + __name__
 		
-		c_SDLSurface_p = c_void_p # this suffice for us
-		
-		c_SDLKey = c_uint32
-		c_SDLMod = c_uint32
-		
-		class c_SDLkeysym(Structure):
-			_fields_ = [
-				("scancode", c_uint8),
-				("sym", c_SDLKey),
-				("mod", c_SDLMod),
-				("unicode", c_uint16)
-				]
-		
-		class c_SDLKeyboardEvent(Structure):
-			_fields_ = [
-				("type", c_uint8),
-				("which", c_uint8), # which keyboard device
-				("state", c_uint8), # 1 - down, 0 - up
-				("keysym", c_SDLkeysym)
-				]
-		
-		class c_SDLDummyEvent(Structure):
-			_fields_ = [
-				("type", c_uint8),
-				("data", c_uint8*20) # just some space filler so that we are big enough
-				]
-		
-		class c_SDLEvent(Union):
-			_fields_ = [
-				("type", c_uint8),
-				("key", c_SDLKeyboardEvent),
-				("dummy", c_SDLDummyEvent)
-				]
-		
-		class SDLEventTypes:
-			# just the ones we need for now
-			SDL_KEYDOWN = 2
-			SDL_KEYUP = 3
-			SDL_QUIT = 12
+# setup the new module and patch it into the dict of loaded modules
+new_module = sys.modules[__name__] = ModuleWrapper(__name__)
+
+def init_SDL_dll(dll, headerdir, explicit=True):	
+	dll = cdll.LoadLibrary(dll)
+	parsedState = cparser.parse(headerdir + "/SDL.h")
 	
-		sdl.SDL_Init.argtypes = (c_uint32,)
-		sdl.SDL_Init.restype = c_int
-		
-		sdl.SDL_SetVideoMode.restype = c_SDLSurface_p # screen
-		sdl.SDL_SetVideoMode.argtypes = (c_int, c_int, c_int, c_uint32) # width,height,bpp,flags
-		
-		sdl.SDL_PollEvent.argtypes = (POINTER(c_SDLEvent),)
-		sdl.SDL_WaitEvent.argtypes = (POINTER(c_SDLEvent),)
-	
-		sdl.SDL_GetTicks.restype = c_uint32
-		sdl.SDL_GetTicks.argtypes = ()
-		
-		sdl.SDL_Delay.restype = None
-		sdl.SDL_Delay.argtypes = (c_uint32,)
-		
-		sdl.SDL_Quit.restype = None
-		
+	global sdl
+	sdl = parsedState.getCWrapper(dll)
 	
 def start(app_main):
 	global sdl
