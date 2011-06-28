@@ -12,49 +12,50 @@ quit = False
 def handle_event(ev):
 	global debug, quit
 	
-	if ev.type == SDL.SDLEventTypes.SDL_QUIT: quit = True
-	elif ev.type in [SDL.SDLEventTypes.SDL_KEYDOWN, SDL.SDLEventTypes.SDL_KEYUP]:
+	if ev.type == SDL.SDL_EventType.SDL_QUIT: quit = True
+	elif ev.type in [SDL.SDL_EventType.SDL_KEYDOWN, SDL.SDL_EventType.SDL_KEYUP]:
 		down = ev.key.state != 0
 		sym = ev.key.keysym.sym
-		if sym <= 127: sym = chr(sym)			
 		if debug: print "SDL keyboard event:", down, repr(sym), '"' + unichr(ev.key.keysym.unicode).encode("utf-8") + '"'
 		
-		if down and sym == '\x1b': quit = True # ESC
-		if down and sym == 160L: debug = not debug
+		if down and sym == SDL.SDLKey.SDLK_ESCAPE: quit = True
+		if down and sym == SDL.SDLKey.SDLK_WORLD_0: debug = not debug
 
 
 def main_loop():
-	ev = SDL.c_SDLEvent()	
-	oldtime = SDL.sdl.SDL_GetTicks()
+	ev = SDL.SDL_Event()	
+	oldtime = SDL.SDL_GetTicks()
 	
 	maxfps = 100
 	
 	global quit
 	while not quit:
-		while SDL.sdl.SDL_PollEvent(SDL.pointer(ev)) == 1:
+		while SDL.SDL_PollEvent(SDL.pointer(ev)) == 1:
 			handle_event(ev)
 			
-		newtime = SDL.sdl.SDL_GetTicks()
+		newtime = SDL.SDL_GetTicks()
 		dt = newtime - oldtime
 		oldtime = newtime
 		
 		waittime = 1000 / maxfps - dt
 		if waittime > 0:
-			SDL.sdl.SDL_Delay(waittime)
+			SDL.SDL_Delay(waittime)
 
 
 def app_main():
 	print "loaded SDL"
 	
-	SDL.sdl.SDL_Init(0xFFFF) # init everything
-	SDL.sdl.SDL_SetVideoMode(640,480,0,0)
-	SDL.sdl.SDL_EnableUNICODE(1)
+	SDL.SDL_Init(0xFFFF) # init everything
+	SDL.SDL_SetVideoMode(640,480,0,0)
+	SDL.SDL_EnableUNICODE(1)
 	print "initialized SDL"
 
 	main_loop()
 	
-	SDL.sdl.SDL_Quit()
+	SDL.SDL_Quit()
 	print "quit"
 
-	
-SDL.start(app_main)
+
+if __name__ == '__main__':
+	print "parsing SDL headers and loading SDL ..."
+	SDL.start(app_main)
