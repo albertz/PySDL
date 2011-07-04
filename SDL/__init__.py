@@ -1,5 +1,5 @@
 import sys, os
-import cparser
+import cparser, cparser.caching
 from ctypes import *
 sdl = None
 
@@ -19,9 +19,13 @@ class ModuleWrapper(ModuleType):
 # setup the new module and patch it into the dict of loaded modules
 new_module = sys.modules[__name__] = ModuleWrapper(__name__)
 
+CParserFunc = cparser.caching.parse
+# If we don't want to use caching:
+#CParserFunc = cparser.parse
+
 def init_SDL_dll(dll, headerdir, explicit=True):	
 	dll = cdll.LoadLibrary(dll)
-	parsedState = cparser.parse(headerdir + "/SDL.h")
+	parsedState = CParserFunc(headerdir + "/SDL.h")
 	
 	global sdl
 	sdl = parsedState.getCWrapper(dll)
