@@ -123,7 +123,7 @@ class Macro:
 	def __repr__(self):
 		return "<Macro: " + str(self) + ">"
 	def eval(self, state, args):
-		if len(args) != len(self.args): raise TypeError, "invalid number of args in " + str(self)
+		if len(args) != len(self.args): raise TypeError, "invalid number of args (" + str(args) + ") for " + repr(self)
 		func = parse_macro_def_rightside(state, self.args, self.rightside)
 		return func(*args)
 	def __call__(self, *args):
@@ -159,6 +159,7 @@ class CType:
 		if not hasattr(other, "__class__"): return False
 		return self.__class__ is other.__class__ and self.__dict__ == other.__dict__
 	def __ne__(self, other): return not self == other
+	def __hash__(self): return hash(self.__class__) + 31 * hash(tuple(sorted(self.__dict__.iteritems())))
 	def getCType(self, stateStruct):
 		raise NotImplementedError, str(self) + " getCType is not implemented"
 
@@ -494,7 +495,9 @@ def cpreprocess_evaluate_cond(stateStruct, condstr):
 				state = 2
 			elif state == 5: # after "defined" without brackets (yet)
 				if c in SpaceChars: pass
-				elif c == "(": state = 10
+				elif c == "(":
+					state = 10
+					breakLoop = False
 				elif c == ")":
 					stateStruct.error("preprocessor eval: 'defined' invalid in '" + condstr + "'")
 					return
@@ -537,7 +540,7 @@ def cpreprocess_evaluate_cond(stateStruct, condstr):
 					bracketLevel = 1
 					args = []
 				else:
-					stateStruct.error("preprocessor eval: '" + c + "' not expected")
+					stateStruct.error("preprocessor eval: '" + c + "' not expected after '" + laststr + "'")
 					return
 			elif state == 11: # after "(" after identifier
 				if c == "(":
@@ -1089,8 +1092,12 @@ def cpre2_parse(stateStruct, input, brackets = None):
 							# break loop, we consumed this char
 				elif c == ",":
 					if macrobrackets:
-						if len(macroargs) == 0: macroargs = ["",""]
-						else: macroargs += [""]
+						if len(macrobrackets) == 1:
+							if len(macroargs) == 0: macroargs = ["",""]
+							else: macroargs += [""]
+						else:
+							if len(macroargs) == 0: macroargs = [""]
+							macroargs[-1] += c
 					else:
 						state = 32
 						breakLoop = False
@@ -1726,8 +1733,12 @@ def cpre3_parse_typedef(stateStruct, curCObj, input_iter):
 						typeObj._bracketlevel = curCObj._bracketlevel
 						typeObj._type_tokens[:] = curCObj._type_tokens
 						curCObj._type_tokens[:] = [typeObj]
-						cpre3_parse_funcpointername(stateStruct, typeObj, input_iter)
-						curCObj.name = typeObj.name
+						if curCObj.name is None: # eg.: typedef int (*Function)();
+							cpre3_parse_funcpointername(stateStruct, typeObj, input_iter)
+							curCObj.name = typeObj.name
+						else: # eg.: typedef int Function();
+							typeObj.name = curCObj.name
+							cpre3_parse_funcargs(stateStruct, typeObj, input_iter)							
 					else:
 						cpre3_parse_funcargs(stateStruct, typeObj, input_iter)
 				elif token.content == "[":
@@ -1939,14 +1950,15 @@ def parse(filename):
 	
 	return state
 	
-def test():
+def test(*args):
 	import better_exchook
 	better_exchook.install()
 	
 	state = State()
 	state.autoSetupSystemMacros()
 
-	preprocessed = state.preprocess_file("/Library/Frameworks/SDL.framework/Headers/SDL.h", local=True)
+	filename = args[0] if args else "/Library/Frameworks/SDL.framework/Headers/SDL.h"
+	preprocessed = state.preprocess_file(filename, local=True)
 	tokens = cpre2_parse(state, preprocessed)
 	
 	token_list = []
@@ -1961,4 +1973,5 @@ def test():
 	return state, token_list
 
 if __name__ == '__main__':
-	test()
+	import sys
+	test(*sys.argv[1:])
