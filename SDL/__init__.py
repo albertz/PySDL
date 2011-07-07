@@ -15,7 +15,10 @@ class ModuleWrapper(ModuleType):
 		try: return getattr(wrapper.wrapped, attrib)
 		except AttributeError: pass
 		raise AttributeError, "attrib " + attrib + " not found in module " + __name__ + " nor in wrapper " + str(wrapper)
-		
+	def __dir__(self):
+		global wrapper
+		return dir(orig_module) + list(wrapper.wrapped.__class__.__dict__)
+
 # setup the new module and patch it into the dict of loaded modules
 new_module = sys.modules[__name__] = ModuleWrapper(__name__)
 
