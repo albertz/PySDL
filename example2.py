@@ -28,13 +28,6 @@ def main_loop():
 	oldtime = SDL.SDL_GetTicks()
 	global screen
 
-	# Stupid workaround for now.
-	# This is because the first SDL_Surface pointer type was defined in the one module (SDL)
-	# and the other SDL_Surface pointer was a separate ctypes type declaration
-	# from the other module (SDL_image). It seems that when calling a CFuncPtr
-	# with explicit argtypes specification, it doesn't allow this.	
-	SDL.IMG_Load.restype = SDL.POINTER(SDL.SDL_Surface)
-	
 	image = SDL.IMG_Load('example2.png')
 	if not image:
 		print "failed to load image"
