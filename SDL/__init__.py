@@ -57,7 +57,29 @@ def init_SDLImage_dll(dll, headerdir):
 	
 	global sdl_image
 	sdl_image = parsedState.getCWrapper(dll)
-	
+
+def get_lib_binheader(name, alt_header_pathname=None):
+	import os.path
+	for prefix in ("/usr/local","/usr"):
+		for binpostfix in ("-1.3.so.0","-1.3.so","-1.2.so",".so"):
+			bin = prefix + "/lib/lib" + name + binpostfix
+			if os.path.exists(bin):
+				def findHeaders(name):
+					for headerpostfix in ("","1.3","-1.3","1.2","-1.2"):
+						header = prefix + "/include/" + name + headerpostfix
+						if os.path.exists(header): return header
+					return None
+				header = findHeaders(name)
+				if header is None and alt_header_pathname is not None:
+					header = findHeaders(alt_header_pathname)
+				if header is None:
+					print "Warning: found", bin, "but no matching headers"
+					continue
+				return bin, header
+	print "Error: didn't found libary", name
+	# return dummy
+	return "/usr/lib/lib" + name + ".so", "/usr/include/" + name
+
 def start(app_main):
 	global sdl
 	
@@ -93,6 +115,6 @@ def start(app_main):
 		del pool
 	
 	else:
-		init_SDL_dll("/usr/local/lib/libSDL-1.3.so.0", "/usr/local/include/SDL")
-		init_SDLImage_dll("/usr/local/lib/libSDL_image.so", "/usr/local/include/SDL")
+		init_SDL_dll(*get_lib_binheader("SDL"))
+		init_SDLImage_dll(*get_lib_binheader("SDL_image","SDL"))
 		app_main()
