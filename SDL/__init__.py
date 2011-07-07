@@ -1,8 +1,7 @@
 import sys, os
-import cparser, cparser.caching
+import cparser, cparser.caching, cparser.cwrapper
 from ctypes import *
-sdl = None
-sdl_image = None
+wrapper = cparser.cwrapper.CWrapper()
 
 # keep a reference to this module so that it's not garbage collected
 orig_module = sys.modules[__name__]
@@ -10,17 +9,12 @@ orig_module = sys.modules[__name__]
 from types import ModuleType
 class ModuleWrapper(ModuleType):
 	def __getattr__(self, attrib):
-		global sdl
-		global sdl_image
+		global wrapper
 		try: return getattr(orig_module, attrib)
 		except AttributeError: pass
-		if sdl is not None:
-			try: return getattr(sdl, attrib)
-			except AttributeError: pass
-		if sdl_image is not None:
-			try: return getattr(sdl_image, attrib)
-			except AttributeError: pass
-		raise AttributeError, "attrib " + attrib + " not found in module " + __name__
+		try: return getattr(wrapper.wrapped, attrib)
+		except AttributeError: pass
+		raise AttributeError, "attrib " + attrib + " not found in module " + __name__ + " nor in wrapper " + str(wrapper)
 		
 # setup the new module and patch it into the dict of loaded modules
 new_module = sys.modules[__name__] = ModuleWrapper(__name__)
@@ -37,8 +31,8 @@ def init_SDL_dll(dll, headerdir):
 	dll = cdll.LoadLibrary(dll)
 	parsedState = CParserFunc(headerdir + "/SDL.h")
 	
-	global sdl
-	sdl = parsedState.getCWrapper(dll)
+	global wrapper
+	wrapper.register(parsedState, dll)
 
 def init_SDLImage_dll(dll, headerdir):
 	dll = cdll.LoadLibrary(dll)
@@ -54,9 +48,9 @@ def init_SDLImage_dll(dll, headerdir):
 	state.findIncludeFullFilename = findIncludeFullFilename
 	
 	parsedState = CParserFunc(headerdir + "/SDL_image.h", state)
-	
-	global sdl_image
-	sdl_image = parsedState.getCWrapper(dll)
+
+	global wrapper
+	wrapper.register(parsedState, dll)
 
 def get_lib_binheader(name, alt_header_pathname=None):
 	import os.path
