@@ -19,8 +19,8 @@ def handle_event(ev):
 		sym = ev.key.keysym.sym
 		if debug: print "SDL keyboard event:", down, repr(sym), '"' + unichr(ev.key.keysym.unicode).encode("utf-8") + '"'
 		
-		if down and sym == SDL.SDLKey.SDLK_ESCAPE: quit = True
-		if down and sym == SDL.SDLKey.SDLK_WORLD_0: debug = not debug
+		if down and sym == SDL.SDLK_ESCAPE: quit = True
+		if down and sym == SDL.SDLK_WORLD_0: debug = not debug
 
 
 def main_loop():
