@@ -11,6 +11,7 @@ from types import ModuleType
 class ModuleWrapper(ModuleType):
 	def __getattr__(self, attrib):
 		global sdl
+		global sdl_image
 		try: return getattr(orig_module, attrib)
 		except AttributeError: pass
 		if sdl is not None:
@@ -92,6 +93,6 @@ def start(app_main):
 		del pool
 	
 	else:
-		init_SDL_dll("SDL", "/usr/include/SDL")
-		init_SDL_dll("SDL_image", "/usr/include/SDL_image")
+		init_SDL_dll("/usr/local/lib/libSDL-1.3.so.0", "/usr/local/include/SDL")
+		init_SDLImage_dll("/usr/local/lib/libSDL_image.so", "/usr/local/include/SDL")
 		app_main()
