@@ -84,33 +84,78 @@ def start(app_main):
 		init_SDL_dll("/Library/Frameworks/SDL.framework/SDL", "/Library/Frameworks/SDL.framework/Headers")
 		init_SDLImage_dll("/Library/Frameworks/SDL_image.framework/SDL_image", "/Library/Frameworks/SDL_image.framework/Headers")
 	
-		from AppKit import NSApp, NSApplication, NSNotificationCenter, NSApplicationDidFinishLaunchingNotification
-		from Foundation import NSAutoreleasePool, NSObject
-		pool = NSAutoreleasePool.alloc().init()
-		
-		class MyApplicationActivator(NSObject):
-		
-			def activateNow_(self, aNotification):
-				NSApp().activateIgnoringOtherApps_(True)
-				try:
-					app_main()
-				except:
-					sys.excepthook(*sys.exc_info())
-				os._exit(0)
-				
-		activator = MyApplicationActivator.alloc().init()
-		NSNotificationCenter.defaultCenter().addObserver_selector_name_object_(
-			activator,
-			'activateNow:',
-			NSApplicationDidFinishLaunchingNotification,
-			None,
-		)
-		
-		NSApplication.sharedApplication()
-		NSApp().run()
-		
-		del pool
+		using_cocoapy = False
+		try:
+			from AppKit import NSApp, NSApplication, NSNotificationCenter, NSApplicationDidFinishLaunchingNotification
+			from Foundation import NSAutoreleasePool, NSObject
+		except ImportError:
+			using_cocoapy = True
+			import cocoapy as cp
+			
+		if not using_cocoapy:
+			pool = NSAutoreleasePool.alloc().init()
 	
+			class MyApplicationActivator(NSObject):
+	
+				def activateNow_(self, aNotification):
+					NSApp().activateIgnoringOtherApps_(True)
+					try:
+						app_main()
+					except:
+						sys.excepthook(*sys.exc_info())
+					os._exit(0)
+			
+			activator = MyApplicationActivator.alloc().init()
+			NSNotificationCenter.defaultCenter().addObserver_selector_name_object_(
+				activator,
+				'activateNow:',
+				NSApplicationDidFinishLaunchingNotification,
+				None,
+			)
+	
+			NSApplication.sharedApplication()
+			NSApp().run()
+	
+			del pool
+		else:
+			if sys.platform == "darwin":	
+				import cocoapy as cp
+				init_SDL_dll("/Library/Frameworks/SDL.framework/SDL", "/Library/Frameworks/SDL.framework/Headers")
+				init_SDLImage_dll("/Library/Frameworks/SDL_image.framework/SDL_image", "/Library/Frameworks/SDL_image.framework/Headers")
+				print 'Done loading SDL'
+
+				pool = cp.send_message('NSAutoreleasePool', 'alloc')
+				pool = cp.send_message(pool, 'init')
+
+				class MyApplicationActivator_Impl(object):
+					MyApplicationActivator = cp.ObjCSubclass('NSObject', 'MyApplicationActivator')
+
+					@MyApplicationActivator.method('@')
+					def init(self):
+						self = cp.ObjCInstance(cp.send_super(self, 'init'))
+						return self
+
+					@MyApplicationActivator.method('v@')
+					def activateNow(self, aNotification):
+						t = cp.send_message('NSApp', 'activateIgnoringOtherApps_', True)
+						try:
+							app_main()
+						except:
+							sys.excepthook(*sys.exc_info())
+						os._exit(0)
+
+				MyApplicationActivator = cp.ObjCClass('MyApplicationActivator')
+				activator = MyApplicationActivator.alloc().init()
+				center = cp.send_message('NSNotificationCenter', 'defaultCenter')
+				cp.send_message(center, 'addObserver:selector:name:object:',
+					activator,
+					cp.get_selector("activateNow"),
+					cp.get_NSString("NSApplicationDidFinishLaunchingNotification"),
+					None)
+
+				app = cp.send_message('NSApplication', 'sharedApplication')
+				cp.send_message(app, 'run') # This will never return
+			
 	else:
 		init_SDL_dll(*get_lib_binheader("SDL"))
 		init_SDLImage_dll(*get_lib_binheader("SDL_image","SDL"))
