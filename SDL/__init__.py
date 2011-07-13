@@ -120,46 +120,45 @@ def start(app_main = None):
 				NSApp().run()
 				del pool
 		else:
-			if sys.platform == "darwin":	
-				import cocoapy as cp
-				init_SDL_dll("/Library/Frameworks/SDL.framework/SDL", "/Library/Frameworks/SDL.framework/Headers")
-				init_SDLImage_dll("/Library/Frameworks/SDL_image.framework/SDL_image", "/Library/Frameworks/SDL_image.framework/Headers")
-				print 'Done loading SDL'
+			import cocoapy as cp
+			init_SDL_dll("/Library/Frameworks/SDL.framework/SDL", "/Library/Frameworks/SDL.framework/Headers")
+			init_SDLImage_dll("/Library/Frameworks/SDL_image.framework/SDL_image", "/Library/Frameworks/SDL_image.framework/Headers")
+			print 'Done loading SDL'
 
-				pool = cp.send_message('NSAutoreleasePool', 'alloc')
-				pool = cp.send_message(pool, 'init')
+			pool = cp.send_message('NSAutoreleasePool', 'alloc')
+			pool = cp.send_message(pool, 'init')
 
-				class MyApplicationActivator_Impl(object):
-					MyApplicationActivator = cp.ObjCSubclass('NSObject', 'MyApplicationActivator')
+			class MyApplicationActivator_Impl(object):
+				MyApplicationActivator = cp.ObjCSubclass('NSObject', 'MyApplicationActivator')
 
-					@MyApplicationActivator.method('@')
-					def init(self):
-						self = cp.ObjCInstance(cp.send_super(self, 'init'))
-						return self
+				@MyApplicationActivator.method('@')
+				def init(self):
+					self = cp.ObjCInstance(cp.send_super(self, 'init'))
+					return self
 
-					@MyApplicationActivator.method('v@')
-					def activateNow(self, aNotification):
-						try:
-							app_main()
-						except:
-							sys.excepthook(*sys.exc_info())
-						os._exit(0)
+				@MyApplicationActivator.method('v@')
+				def activateNow(self, aNotification):
+					try:
+						app_main()
+					except:
+						sys.excepthook(*sys.exc_info())
+					os._exit(0)
 
-				MyApplicationActivator = cp.ObjCClass('MyApplicationActivator')
-				activator = MyApplicationActivator.alloc().init()
-				center = cp.send_message('NSNotificationCenter', 'defaultCenter')
-				cp.send_message(center, 'addObserver:selector:name:object:',
-					activator,
-					cp.get_selector("activateNow"),
-					cp.get_NSString("NSApplicationDidFinishLaunchingNotification"),
-					None)
+			MyApplicationActivator = cp.ObjCClass('MyApplicationActivator')
+			activator = MyApplicationActivator.alloc().init()
+			center = cp.send_message('NSNotificationCenter', 'defaultCenter')
+			cp.send_message(center, 'addObserver:selector:name:object:',
+				activator,
+				cp.get_selector("activateNow"),
+				cp.get_NSString("NSApplicationDidFinishLaunchingNotification"),
+				None)
 
-				app = cp.send_message('NSApplication', 'sharedApplication')
-				cp.send_message('NSApp', 'finishLaunching')
-				cp.send_message('NSApp', 'updateWindows')
-				cp.send_message('NSApp', 'activateIgnoringOtherApps', True)
-				if app_main is not None:
-					cp.send_message(app, 'run')			
+			app = cp.send_message('NSApplication', 'sharedApplication')
+			cp.send_message('NSApp', 'finishLaunching')
+			cp.send_message('NSApp', 'updateWindows')
+			cp.send_message('NSApp', 'activateIgnoringOtherApps', True)
+			if app_main is not None:
+				cp.send_message(app, 'run')			
 	else:
 		init_SDL_dll(*get_lib_binheader("SDL"))
 		init_SDLImage_dll(*get_lib_binheader("SDL_image","SDL"))
