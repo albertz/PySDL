@@ -76,8 +76,8 @@ def get_lib_binheader(name, alt_header_pathname=None):
 	print "Error: didn't found libary", name
 	# return dummy
 	return "/usr/lib/lib" + name + ".so", "/usr/include/" + name
-
-def start(app_main):
+	
+def start(app_main = None):
 	global sdl
 	
 	if sys.platform == "darwin":	
@@ -98,7 +98,6 @@ def start(app_main):
 			class MyApplicationActivator(NSObject):
 	
 				def activateNow_(self, aNotification):
-					NSApp().activateIgnoringOtherApps_(True)
 					try:
 						app_main()
 					except:
@@ -114,9 +113,12 @@ def start(app_main):
 			)
 	
 			NSApplication.sharedApplication()
-			NSApp().run()
-	
-			del pool
+			NSApp().activateIgnoringOtherApps_(True)
+			NSApp().finishLaunching()
+			NSApp().updateWindows()
+			if app_main is not None:
+				NSApp().run()
+				del pool
 		else:
 			if sys.platform == "darwin":	
 				import cocoapy as cp
@@ -137,7 +139,6 @@ def start(app_main):
 
 					@MyApplicationActivator.method('v@')
 					def activateNow(self, aNotification):
-						t = cp.send_message('NSApp', 'activateIgnoringOtherApps_', True)
 						try:
 							app_main()
 						except:
@@ -154,9 +155,13 @@ def start(app_main):
 					None)
 
 				app = cp.send_message('NSApplication', 'sharedApplication')
-				cp.send_message(app, 'run') # This will never return
-			
+				cp.send_message('NSApp', 'finishLaunching')
+				cp.send_message('NSApp', 'updateWindows')
+				cp.send_message('NSApp', 'activateIgnoringOtherApps', True)
+				if app_main is not None:
+					cp.send_message(app, 'run')			
 	else:
 		init_SDL_dll(*get_lib_binheader("SDL"))
 		init_SDLImage_dll(*get_lib_binheader("SDL_image","SDL"))
-		app_main()
+		if app_main is not None:
+			app_main()
