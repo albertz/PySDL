@@ -110,7 +110,7 @@ class CWrapper:
 			cache[_attrib] = t
 			return t
 			
-		raise AttributeError, attrib + " not found in " + str(self)
+		raise AttributeError, _attrib + " not found in " + str(self)
 	
 	def __repr__(self):
 		return "<" + self.__class__.__name__  + " of " + repr(self.stateStructs) + ">"
