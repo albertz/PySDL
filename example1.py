@@ -16,7 +16,7 @@ def handle_event(ev):
 	elif ev.type in [SDL.SDL_EventType.SDL_KEYDOWN, SDL.SDL_EventType.SDL_KEYUP]:
 		down = ev.key.state != 0
 		sym = ev.key.keysym.sym
-		if debug: print "SDL keyboard event:", down, repr(sym), '"' + unichr(ev.key.keysym.unicode).encode("utf-8") + '"'
+		if debug: print("SDL keyboard event: %s %r %s" % (down, sym, '"' + unichr(ev.key.keysym.unicode).encode("utf-8") + '"'))
 		
 		if down and sym == SDL.SDLK_ESCAPE: quit = True
 		if down and sym == SDL.SDLK_WORLD_0: debug = not debug
@@ -43,19 +43,19 @@ def main_loop():
 
 
 def app_main():
-	print "loaded SDL"
+	print("loaded SDL")
 	
 	SDL.SDL_Init(SDL.SDL_INIT_EVERYTHING)
 	SDL.SDL_SetVideoMode(640,480,0,0)
 	SDL.SDL_EnableUNICODE(1)
-	print "initialized SDL"
+	print("initialized SDL")
 
 	main_loop()
 	
 	SDL.SDL_Quit()
-	print "quit"
+	print("quit")
 
 
 if __name__ == '__main__':
-	print "parsing SDL headers and loading SDL ..."
+	print("parsing SDL headers and loading SDL ...")
 	SDL.start(app_main)
