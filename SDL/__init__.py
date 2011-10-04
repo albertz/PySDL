@@ -14,7 +14,7 @@ class ModuleWrapper(ModuleType):
 		except AttributeError: pass
 		try: return getattr(wrapper.wrapped, attrib)
 		except AttributeError: pass
-		raise AttributeError, "attrib " + attrib + " not found in module " + __name__ + " nor in wrapper " + str(wrapper)
+		raise AttributeError("attrib " + attrib + " not found in module " + __name__ + " nor in wrapper " + str(wrapper))
 	def __dir__(self):
 		global wrapper
 		return dir(orig_module) + list(wrapper.wrapped.__class__.__dict__)
@@ -70,10 +70,10 @@ def get_lib_binheader(name, alt_header_pathname=None):
 				if header is None and alt_header_pathname is not None:
 					header = findHeaders(alt_header_pathname)
 				if header is None:
-					print "Warning: found", bin, "but no matching headers"
+					print("Warning: found " + bin + " but no matching headers")
 					continue
 				return bin, header
-	print "Error: didn't found libary", name
+	print("Error: didn't found libary " + name)
 	# return dummy
 	return "/usr/lib/lib" + name + ".so", "/usr/include/" + name
 	
@@ -123,7 +123,7 @@ def start(app_main = None):
 			import cocoapy as cp
 			init_SDL_dll("/Library/Frameworks/SDL.framework/SDL", "/Library/Frameworks/SDL.framework/Headers")
 			init_SDLImage_dll("/Library/Frameworks/SDL_image.framework/SDL_image", "/Library/Frameworks/SDL_image.framework/Headers")
-			print 'Done loading SDL'
+			print('Done loading SDL')
 
 			pool = cp.send_message('NSAutoreleasePool', 'alloc')
 			pool = cp.send_message(pool, 'init')
