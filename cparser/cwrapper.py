@@ -2,25 +2,37 @@
 # by Albert Zeyer, 2011
 # code under LGPL
 
+import ctypes
+
 class CStateDictWrapper:
 	def __init__(self, dicts):
 		self._dicts = dicts
 	def __setitem__(self, k, v):
 		assert False, "read-only in C wrapped state"
 	def __getitem__(self, k):
+		found = []
 		for d in self._dicts:
-			try: return d[k]
+			try: found += [d[k]]
 			except KeyError: pass
+		for f in found:
+			# prefer items with body set.
+			if hasattr(f, "body") and f.body is not None: return f
+		if found:
+			# fallback, noone has body set.
+			return found[0]
 		raise KeyError, str(k) + " not found in C wrapped state " + str(self)
 	def __contains__(self, k):
 		for d in self._dicts:
 			if k in d: return True
 		return False
+	def get(self, k, default = None):
+		try: return self.__getitem__(k)
+		except KeyError: return default
 	def has_key(self, k):
 		return self.__contains__(k)
 	def __repr__(self): return "CStateDictWrapper(" + repr(self._dicts) + ")"
 	def __str__(self): return "CStateDictWrapper(" + str(self._dicts) + ")"
-	
+
 class CStateWrapper:
 	WrappedDicts = ("macros","typedefs","structs","unions","enums","funcs","vars","enumconsts")
 	LocalAttribs = ("_cwrapper")
@@ -46,12 +58,14 @@ class CStateWrapper:
 		return "<CStateWrapper of " + repr(self._cwrapper) + ">"
 	def __str__(self): return self.__repr__()
 	def __setattr__(self, k, v):
-		if k in self.LocalAttribs:
-			self.__dict__[k] = v
-			return
-		assert False, "read-only CStateWrapper " + str(self)
+		self.__dict__[k] = v
 	def __getstate__(self):
 		assert False, "this is not really prepared/intended to be pickled"
+
+def _castArg(value):
+	if isinstance(value, (str,unicode)):
+		return ctypes.cast(ctypes.c_char_p(value), ctypes.POINTER(ctypes.c_byte))
+	return value
 	
 class CWrapper:
 	def __init__(selfWrapper):
@@ -72,7 +86,7 @@ class CWrapper:
 		self.stateStructs.append(stateStruct)
 		def iterAllAttribs():
 			for attrib in stateStruct.macros:
-				if len(stateStruct.macros[attrib].args) > 0: continue
+				if stateStruct.macros[attrib].args is not None: continue
 				yield attrib
 			for attrib in stateStruct.typedefs:
 				yield attrib
@@ -91,12 +105,12 @@ class CWrapper:
 		wrappedStateStruct = self._wrappedStateStruct
 		for stateStruct in self.stateStructs:
 			attrib = _attrib
-			while attrib in stateStruct.macros and len(stateStruct.macros[attrib].args) == 0:
+			while attrib in stateStruct.macros and stateStruct.macros[attrib].args is None:
 				stateStruct.macros[attrib]._parseTokens(stateStruct)
 				resolvedMacro = stateStruct.macros[attrib].getSingleIdentifer(wrappedStateStruct)
 				if resolvedMacro is not None: attrib = str(resolvedMacro)
 				else: break
-			if attrib in stateStruct.macros and len(stateStruct.macros[attrib].args) == 0:
+			if attrib in stateStruct.macros and stateStruct.macros[attrib].args is None:
 				t = stateStruct.macros[attrib].getCValue(wrappedStateStruct)
 			elif attrib in stateStruct.typedefs:
 				t = stateStruct.typedefs[attrib].getCType(wrappedStateStruct)
@@ -104,7 +118,8 @@ class CWrapper:
 				t = stateStruct.enumconsts[attrib].value
 			elif attrib in stateStruct.funcs:
 				t = stateStruct.funcs[attrib].getCType(wrappedStateStruct)
-				t = t((attrib, stateStruct.clib))
+				f = t((attrib, stateStruct.clib))
+				t = lambda *args: f(*map(_castArg, args))			
 			else:
 				continue
 			cache[_attrib] = t

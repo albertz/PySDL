@@ -2,7 +2,7 @@ PyCParser
 =========
 <https://github.com/albertz/PyCParser>
 
-A **C** parser written in Python. Also includes an automatic ctypes interface generator.
+A **C** parser and interpreter written in Python. Also includes an automatic ctypes interface generator.
 
 It is looser than the C grammar, i.e. it should support a superset of the C language in general.
 
@@ -11,10 +11,21 @@ Some of the support may a bit incomplete or wrong at this point because I didn't
 Similar projects
 ----------------
 
+Parsers / `ctypes` interface generators:
+
 * [pyclibrary](https://launchpad.net/pyclibrary) ([Github fork](https://github.com/albertz/pyclibrary)). Is quite slow and didn't worked that well for me.
 * The equally named [pycparser](http://code.google.com/p/pycparser/). It depends on [Python Lex-Yacc](http://www.dabeaz.com/ply/). (I didn't really tested it yet.)
 * [ctypesgen](http://code.google.com/p/ctypesgen/). Also uses Lex+Yacc.
 * [codegen](http://starship.python.net/crew/theller/ctypes/old/codegen.html). Uses GCC-XML. See below about the disadvantages of such an aproach.
+
+Interpreters:
+
+*There aren't any in Python. So I list all I know about.*
+
+* [CINT](http://root.cern.ch/drupal/content/cint). Probably the most famous one.
+* [Ch](http://www.softintegration.com/). Is not really free.
+* [ups debugger](http://ups.sourceforge.net/main.html).
+* [PicoC](http://code.google.com/p/picoc/). "A very small C interpreter."
 
 Why this project?
 -----------------
@@ -29,19 +40,22 @@ Examples
 --------
 
 * [PySDL](https://github.com/albertz/PySDL). Also uses the automatic ctypes wrapper and maps it to a Python module.
+* [PyCPython](https://github.com/albertz/PyCPython). Interpret CPython in Python.
+* [PyLua](https://github.com/albertz/PyLua). Interpret Lua in Python.
 
-Parsed without (fatal) errors but not much checked otherwise:
+Also see the *tests/test_interpreter.{c,py}* 'Hello world' example.
 
-* `zlib.h`, `readline.h`, `Python.h`
-
-TODOs / further directions
---------------------------
+Current state
+-------------
 
 * I'm quite sure that function pointer typedefs are handled incorrectly. E.g. `typedef void f();` and `typedef void (*f)();` are just the same right now. See `cpre3_parse_typedef` and do some testing if you want to fix this.
-* More testing.
-* Complete C support. Right now, most of the stuff in the function body is not really supported, i.e. function calls, expressions, if/while/for/etc control structure, and so on. Only very simple statements can be evaluated so far and it completely ignores operator priority right now. Operator priority is also ignored for C preprocessor expressions. 
-* With complete C support, it is not so difficult anymore to write a C interpreter.
-* Maybe C++ support. :)
+* Array initializers (e.g. `{1,2,3}`) aren't correctly handled by the interpreter.
+* `goto`s are not handled by the interpreter.
+* Function pointers don't work quite correct in the interpreter.
+* Many functions from the standard C library are still missing.
+* There might be some bugs. :)
+* C++ isn't supported yet. :)
+
 
 --- Albert Zeyer, <http://www.az2000.de>
 
