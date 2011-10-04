@@ -1,8 +1,8 @@
 from ctypes import *
 from ctypes import util
 
-from runtime import send_message, ObjCInstance
-from cocoatypes import *
+from .runtime import send_message, ObjCInstance
+from .cocoatypes import *
 
 ######################################################################
 
@@ -85,7 +85,7 @@ NSApplicationDidHideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidHide
 NSApplicationDidUnhideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUnhideNotification')
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSEvent.h
-NSAnyEventMask = 0xFFFFFFFFL     # NSUIntegerMax
+NSAnyEventMask = 0xFFFFFFFF     # NSUIntegerMax
 
 NSKeyDown            = 10
 NSKeyUp              = 11

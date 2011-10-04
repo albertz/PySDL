@@ -90,7 +90,6 @@ def start(app_main = None):
 			from Foundation import NSAutoreleasePool, NSObject
 		except ImportError:
 			using_cocoapy = True
-			import cocoapy as cp
 			
 		if not using_cocoapy:
 			pool = NSAutoreleasePool.alloc().init()
@@ -119,8 +118,12 @@ def start(app_main = None):
 			if app_main is not None:
 				NSApp().run()
 				del pool
-		else:
-			import cocoapy as cp
+		else: # use CocoaPy
+			if sys.version_info.major == 2:
+				import cocoapy as cp
+			else:
+				from . import cocoapy
+				cp = cocoapy
 			init_SDL_dll("/Library/Frameworks/SDL.framework/SDL", "/Library/Frameworks/SDL.framework/Headers")
 			init_SDLImage_dll("/Library/Frameworks/SDL_image.framework/SDL_image", "/Library/Frameworks/SDL_image.framework/Headers")
 			print('Done loading SDL')

@@ -36,15 +36,18 @@ import weakref
 from ctypes import *
 from ctypes import util
 
-from cocoatypes import *
+from .cocoatypes import *
 
-__LP64__ = (sys.maxint > 2**32)
+__LP64__ = (sys.maxsize > 2**32)
 __i386__ = (platform.machine() == 'i386')
 
 if sizeof(c_void_p) == 4:
     c_ptrdiff_t = c_int32
 elif sizeof(c_void_p) == 8:
     c_ptrdiff_t = c_int64
+
+if sys.version_info.major >= 3:
+    basestring = str
 
 ######################################################################
 

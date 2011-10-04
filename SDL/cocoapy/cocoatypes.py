@@ -1,7 +1,7 @@
 from ctypes import *
 
 import sys, platform
-__LP64__ = (sys.maxint > 2**32)
+__LP64__ = (sys.maxsize > 2**32)
 __i386__ = (platform.machine() == 'i386')
 
 PyObjectEncoding = '{PyObject=@}'
