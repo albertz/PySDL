@@ -11,6 +11,7 @@ How does this **PySDL** differ?
 -------------------------------
 
 * Purely implemented in Python.
+* On-the-fly ctypes generation from the `SDL.h`.
 * Straight-forward 1:1 binding to SDL.
 
 How is it implemented?
